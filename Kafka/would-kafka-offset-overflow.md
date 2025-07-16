@@ -11,7 +11,7 @@ Kafka also writes messages one after another, as in a log.  Okay there are also 
 
 Now, computers are finite device. Kakfa's number is of 64-bit long, and no more. And we'd like to keep Kafka running forever. If we keep a log as long as, say human history, when will we run out of numbers? Will it last until the sun goes out?
 
-Let's get down to the numbers. Data type: 64-bit Long. It's signed, so only 63 bits are used to enumerate.  Like ancient Greek, we don't count in the negative, so we are left with $9,223,372,036,854,775,807$ ($2^63 - 1$) as the last message we can give number to.  That gives us 9.2 quintillion (on the order of $10^18$), one followed by eighteen zeros) messages.
+Let's get down to the numbers. Data type: 64-bit Long. It's signed, so only 63 bits are used to enumerate.  Like ancient Greek, we don't count in the negative, so we are left with $9,223,372,036,854,775,807$ ($2^{63} - 1$) as the last message we can give number to.  That gives us 9.2 quintillion (on the order of $10^{18}$), one followed by eighteen zeros) messages.
 
 How long does it take to get to there?
   - At 1 million messages/second: $\approx 292$ thousand years
@@ -27,10 +27,10 @@ To help human race, luckily, Kafka has built-in overflow detection, and the solu
 This is analogous to how humans count more than ten fingers.  When we count to more than ten, we run out of fingers, but we reuse the ten fingures, just remembering we're now counting how many passed ten.  In other words, we use base `10`, then we can reuse the number `3` as in `3` and `13` and `23`. 
 
 In summary, what happens if overflow occurs is:
-  1. Detection: Kafka detects offset overflow conditions
-  2. Segment Splitting: Automatically splits problematic segments
-  3. Exception Handling: Throws specific overflow exceptions
-  4. Graceful Degradation: System continues operating with split segments
+  - Kafka detects offset overflow conditions
+  - Automatically splits problematic segments
+  - Throws specific overflow exceptions
+  - System continues operating with split segments
 
 
 # References
