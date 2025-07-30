@@ -202,7 +202,7 @@ Extent: (offset, size)
 +----------------+----------------+-----+----------------+
 ```
 
-* $$ byte[i] = ext[i / size + i \mod size ] $$
+* $$ byte[i] = ext[i / size][i \mod size ] $$
 * `seek(i)` tell S3 don't bother with skipped bytes
 * Optimal `extentSize` ❓
 
@@ -412,13 +412,11 @@ Model is discrete, non-differentiable.
 
 It assumes each poll time is stable given extent.
 
+But there is no bound.
 
 --
 
-### Poll time varies
-
 ![poll.png](./poll.png)
-
 
 --
 
