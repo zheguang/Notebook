@@ -1,7 +1,9 @@
 # Kafka + NetApp <sup>^AI</sup>
-Building a Connector Better than Market
+Building a ️Connector Better than Market
 
-🎙️ [Guang Zhao](https://zheguang.github.io)
+🍺🐿️   🆚   🦀
+
+[Guang Zhao](https://zheguang.github.io)
 
 ©️ 2025 NetApp, Inc. All rights reserved.
 
@@ -12,6 +14,8 @@ Building a Connector Better than Market
 🍺 NetApp Ontap/StorageGrid
 
 🐿️ Kafka pipeline
+
+❓ How to connect the two
 
 --
 
@@ -26,7 +30,7 @@ Building a Connector Better than Market
 --
 
 ## End of story?
-Everything seems standard...
+Just a simple config away?
 
 ---
 
@@ -38,17 +42,21 @@ Everything seems standard...
 
 --
 
-## Limitation Left & Right
+## Limits 🍺 🦀
 
 --
 
-### Ontap/StorageGrid 
+### 🍺 Ontap/StorageGrid
 
-Unstable single read >10GB object
+Read: fail `GetObject*` >10GB
+
+Write: both StorageGrid and AWS recommend
+* 5GB for single `PutObject`
+* 5TB max
 
 --
 
-### Market
+### 🦀 Market Connectors
 
 --------------------------------------------------------
 | Confluent        | Aiven                  | Lenses   |
@@ -60,45 +68,65 @@ Unstable single read >10GB object
 --------------------------------------------------------
 * a. Parquet
 * b. Text
-- c. "Download approach"
-- d. "Single stream approach"
+- c. "Download first" (Anti-Stream)
+- d. "Single stream" (S3 limit)
 
 ---
 
-## Problem is scale
-
-- Simple I/O abstraction for all formats and patterns
-- Scalable I/O implementation for object storage
+## Problem = scale 🏋️
 
 ---
 
 ## Let's Solve it
 
+Just ask Customer to split their data
+
+End of story?
+
+--
+
+## No, let's Really Solve it
+Simple I/O abstraction ➡️ data formats
+
+Scalable I/O implementation ➡️️ external storage
+
 ---
 
-## Background
+## What affects Scalability
 
+--
+
+### Data Formats ➡️ Access Patterns
+
+| CSV, (ND)JSON | Parquet     |
+| ------------- | -------     |
+| Line          | Columnar    | 
+| Sequential    | Semi Random |
+
+<!---
 --
 
 ### Text: Sequential Access
 
 ```csv
-1,first,row
-2,second,row
-...
-N,nth,row
+1,first,row     *
+2,second,row    |
+...             |
+N,nth,row       v
 ```
 ```json
-{ object: 1 }
-{ object: 2 }
-...
-{ object: N }
+{ object: 1 }   *
+{ object: 2 }   |
+...             |
+{ object: N }   v
 ```
 Scan the file from the first to the last line.
+-->
 
 --
 
 ### Parquet: Semi Random Access
+
 
 ```text
 +----------------+       
@@ -114,23 +142,21 @@ Scan the file from the first to the last line.
 ...
 | Chunk N        |
 +----------------+
-| File Metadata  |
+| File Metadata  |  Imagine cutting a tofu
 + ---------------+
 ```
 1. jump to the end to read Metadata
 2. jump back to chunk, read row in multiple offsets
-* Col_1[i], Col_2[i], ..., Col_N[i]
-
 
 --
 
-### Kafka Connect
+### Kafka Connect(or)
 
 - Poll external records by batches
 - Convert types
 - Publishes records to Kafka topic
 
-External system as what?
+External systems and data formats, are what?
 
 --
 
@@ -159,7 +185,7 @@ Can't handle large S3 object
 
 ### \#1: With Random Access
 ```java
-class RandomAccessInputStream extends FilterInputStream {
+class RandomAccessInputStream extends j.i.FilterInputStream {
     ...
     // Forward and backward
     void seek(long offset) throws IOException;
@@ -181,19 +207,13 @@ class ExtentInputStream extends RandomAccessInputStream {
     ...
 }
 ```
-Extent: (offset, size)
 
 --
 
 #### Diagram
 
 ```text
-     +------------------+-----------------+-----+
-     | Parquet Decoder  | Unicode Decoder | ... |
-     +------------------+-----------------+-----+
-                        |
-                        |
-+-----------------------+--------------------------------+
++--------------------------------------------------------+
 | byte[0], byte[1], ...                        byte[N]   |
 +================+================+=====+================+
 | ext[0]         | ext[1]         | ... | ext[M]         |
@@ -203,10 +223,9 @@ Extent: (offset, size)
 ```
 
 * $$ byte[i] = ext[i / size][i \mod size ] $$
-* `seek(i)` tell S3 don't bother with skipped bytes
-* Optimal `extentSize` ❓
+* multiple smaller reads on a large object
 
----
+--
 
 ### Power of Abstraction
 
@@ -239,9 +258,8 @@ Extent: (offset, size)
 | S3.GetRange[0] | S3.GetRange[1] | ... | S3.GetRange[M] |
 +----------------+----------------+----------------------+
 ```
-* Extents 🔄 external systems
 * Bytes 🔄 data formats
-
+* Extents 🔄 external systems
 
 --
 
@@ -259,28 +277,51 @@ Extent: (offset, size)
     Extent-Stream
 ```
 
+--
+
+### Optimization
+
+Extent 🔈 access pattern ➡️ storage
+
+Storage may optimize, such as caching or prefetching
+
+--
+
+### Optimal Extent Size ❓
+
+Too small: consume resources
+
+Too big: waste unread bytes; S3 limit
+
+🤖 🆚 🤷
+
+How to find out? For each system, each format...
 
 ---
 
 ## (Auto-)Tune Our Connector
 
+<!---
 --
 
 ### External I/O characteristics
 
-* External systems
-* Workload
-- Data formats
-- Size
+- Changing external systems and workload
+- Documentation inaccuracies
+- Human intuition unreliable
 
-❓ Find the best Connecor performance
+❓ Find the best Connector performance
+-->
 
+<!---
 --
 
 ### Unknowns
 - External system designs & changes
 - Documentation inaccuracies
 - Human intuition unreliable
+
+-->
 
 --
 
@@ -289,9 +330,9 @@ Extent: (offset, size)
 $$ \arg\max_{param} P(connector \| param, sys, work) $$
 
 - <ins>param</ins>eters: extent size
-- P, model: throughput
 - <ins>Sys</ins>tem: S3, Ontap, StorageGrid, Local
 - Representative <ins>work</ins>load?
+- P, model: throughput, or latency
 
 ---
 
@@ -317,6 +358,7 @@ $$ \arg\max_{params} P(connector \| param) $$
 ---
 
 ## Benchmark
+Let's do the hard work
 
 --
 
@@ -346,7 +388,7 @@ for i in range(num_polls):
 
 --
 
-### 🍺 StorageGrid time (ms)
+### 🍺 StorageGrid, time (ms)
 ------------
 | Extent(B) | Csv Small | Parquet Small | Parquet Large   |
 | ------    | -------:  | ------------: | ------------:   |
@@ -361,7 +403,7 @@ for i in range(num_polls):
 
 --
 
-### 🍺 StorageGrid vs 😃 AWS
+### 🍺 StorageGrid vs 😃 AWS, Time (ms)
 
 ------------------
 | Extent(B) | StorageGrid<sup>a</sup> | Aws<sup>a</sup>     |
@@ -374,16 +416,15 @@ for i in range(num_polls):
 - std ~ 5% mean
 
 
----
+--
 
 ### Takeaway
 
-* Scales better than Confluent
+* Our Connector scales better than Confluent
 * StorageGrid vs Aws comparable
-* Optimal extent size 
-    - depends on data format
+* Optimal extent size != AI suggests
+    - depends on formats, maybe systems
     - requires internal knowledge
-    - is not what naive AI suggests
 
 ---
 
@@ -398,8 +439,8 @@ num_polls = 10
 batch_size = 128
 x = extent_size
 for i in range(num_polls):
-    time = model(poll(batch_size), x)
-    grad = gradient(model, time, x)
+    cost = model(poll(batch_size), x)
+    grad = gradient(model, cost, x)
     x = step(grad, x)
 ```
 Convergence: found an extent size with fastest poll
@@ -408,7 +449,7 @@ Convergence: found an extent size with fastest poll
 
 ### Problems
 
-Model is discrete, non-differentiable.
+Model is non-differentiable.
 
 It assumes each poll time is stable given extent.
 
@@ -427,9 +468,7 @@ Based on local info, cannot converge to optimal extent
 
 ## 🤖 AI Attempt \#3
 
-Go above abstraction
-
-Combine LLM (\#0) and ML (\#1)
+Combine LLM (\#1) and ML (\#2)
 
 --
 
@@ -437,20 +476,21 @@ Combine LLM (\#0) and ML (\#1)
 
 ```python
 while True:
-    extent_sizes = Llm.generate_response(
-        'Guess optimal extent size', 
+    extent_sizes, num_polls = Llm.generate_response(
+        'Propose candidate extent sizes, observation window', 
         context)
 
-    times = []
+    costs = []
     for x in extent_sizes:
-        times += repeat(
-            10, 
+        costs += repeat(
+            num_polls, 
             model(poll(batch_size), x))
 
-    better_extent_size = find_min(times, extent_sizes)
+    better_extent_size = find_min(costs, extent_sizes)
 
     context.add(better_extent_size)
 ```
+AI gets both general and specific context
 
 --
 
@@ -472,7 +512,7 @@ Experimental... ⌛
 - Nested prefixes
 - 1-1 Type conversion
 
-👍 Better than Market {🦀,...}
+👍 Differentiate from Market {🦀,...}
 
 --
 
@@ -481,8 +521,12 @@ Experimental... ⌛
 - 👁️ Cassandra Parquet/Avro Transformer by [Stefan](stefan.miklosovic@netapp.com)
 
 - Operational to analytical:
-
-👁️ Cassandra - 🐿️ Kafka - X?
+```
+👁️ Cassandra -- Parquet -- 🐿️ Kafka
+                  |        
+                  |
+                  X
+```
 
 ---
 
@@ -493,10 +537,10 @@ Experimental... ⌛
 * Carlos: Organizing
 * Justin: Organizing
 
-- Liam: Discussion
 - Nilkua: NetApp configs
+- Tharindu: Native format
 - Varun: Organizing
-- Win: Ontap Details
+- Win: Ontap
 
 * Team Kafka: Review PR
 * Team Open Source: Discussion
