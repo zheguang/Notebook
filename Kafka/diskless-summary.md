@@ -72,7 +72,7 @@ A table summary of KIPs along several factors important to our customers, such a
  
 ## Diskless KIPs status update
 
-The Kafka community faces an unprecedented challenge with three concurrent proposals all addressing cross-AZ replication costs. Discussions have evoloved gradually as of November 2025, with authors and the community taking time to proceed to consider pros and cons of the proposals.
+The Kafka community faces an unprecedented challenge with three concurrent proposals all addressing cross-AZ replication costs. Discussions have evolved over eight months from April to November 2025, with ongoing technical debates and design iterations as the community evaluates the pros and cons of each approach.
 
 ### Timeline of Major Discussion Points
 
@@ -91,43 +91,83 @@ The Kafka community faces an unprecedented challenge with three concurrent propo
 - Emphasizes simpler design building on existing KIP-405
 - Claims 43% cost reduction while maintaining low latency performance in some durability/storage settings
 
-**May-November 2025** - Discussion continued
-- Jun Rao (Confluent) raises questions about KIP-1150's latency vs KIP-1176's simpler approach
-- Community concern about three concurrent proposals creating review burden
-- No clear consensus emerges on which direction to pursue
+**May 13, 2025** - KIP-1183 Introduced
+- Xinyu Zhou introduces "Unified Shared Storage" concept
+- Proposes abstraction layer approach supporting both local disk and shared storage
+- Two-step implementation: abstract log layer, then define pluggable Stream API
+- Last modified May 16, 2025
+- Community feedback (Colin McCabe, Satish Duggana) raises concerns about Stream interface design and multiple log implementations 
 
-### Current Status by KIP
+**June 2-4, 2025** - KIP-1176 Community Review
+- Jorge Esteban Quilcate Otoya and others provide feedback
+- Henry Haiying Cai responds to questions about implementation details
+
+**June 24, 2025** - KIP-1150 Organization Effort
+- Stanislav Kozlovski suggests grouping all KIP email threads for better organization
+
+**July 21-22, 2025** - Status Check on KIP-1150
+- Jan Siekierski asks about current status after 2 months of reduced activity
+- Jun Rao responds: main gap is support for all existing client APIs, particularly transactions and queues
+
+**August 7, 2025** - Jun Rao's Comprehensive Feedback
+- Provides detailed technical feedback on both KIP-1176 and KIP-1183
+- Raises questions about availability, cost-benefit analysis, and architectural clarity
+
+**August 26-29, 2025** - KIP-1176 Active Discussion
+- Thomas Thornton (Slack) responds to Jun Rao's feedback with detailed explanations
+- Luke Chen joins discussion with questions about performance testing
+- Continued back-and-forth on availability concerns and AZ failure scenarios
+
+**September 4, 2025** - KIP-1150 Major Update
+- Greg Harris and Ivan Yurchenko announce updated design for KIP-1150 and KIP-1163
+- New design includes detailed plans for transactions and queues support
+
+**November 10, 2025** - KIP-1183 Re-engagement
+- Xinyu Zhou responds to Jun Rao's August feedback after delay
+- Addresses concerns about Stream interface and architectural approach
+
+**November 19, 2025** - Latest KIP-1183 Discussion
+- Continued exchange between Jun Rao and Xinyu Zhou on architectural details
+- Discussions focus on failover mechanisms, RF=1 implications, and plugin complexity
+
+### Current Status by KIP (as of November 2025)
 
 **KIP-1150: Diskless Topics**
-- **Status:** Under discussion (continuing since May 2025)
+- **Status:** Active discussion with major September 2025 design update
+- **Progress:** Greg Harris and Ivan Yurchenko published updated design addressing transactions and queues support
 - **Key Concerns:**
   - Expected latency ~100-500ms for writes (vs single-digit ms traditional)
-  - No concrete design yet for transactions and queues support
+  - Feature completeness for all client APIs
   - Is the significant architectural change justified?
 - **Open Questions:**
   - Which use cases can tolerate higher latency?
-  - When will feature parity with traditional Kafka be achieved?
+  - When will full feature parity with traditional Kafka be achieved?
+  - Community acceptance of leaderless architecture
 
 **KIP-1176: Tiered Storage for Active Segments**
-- **Status:** Under discussion (last comment June 2025)
+- **Status:** Active discussion through August 2025
+- **Progress:** Thomas Thornton (Slack) provided detailed responses to Jun Rao's technical concerns
 - **Key Concerns:**
-  - Weak availability story for AZ failures
+  - Weak availability story for AZ failures remains unresolved
   - Only saves cross-AZ costs on follower replication path
   - Implementation complexity may grow beyond initial "small effort" estimate
 - **Open Questions:**
   - How to handle AZ outages with S3 Express One Zone storage?
   - Multi-cloud deployment model for GCP/Azure unclear
+  - Cost-benefit trade-off vs more comprehensive approaches
 
 **KIP-1183: Unified Shared Storage**
-- **Status:** Under discussion (continuing since May 2025)
+- **Status:** Re-engaged discussion in November 2025 after summer hiatus
+- **Progress:** Xinyu Zhou responded to Jun Rao's feedback, ongoing architectural discussions
 - **Key Concerns:**
   - Stream interface design remains unclear
   - Large plugin development burden
-  - Potential multiple AbstractLog implementations
+  - Multiple AbstractLog implementations
 - **Open Questions:**
   - How does this relate to KIP-1150 and KIP-1176?
   - Should Kafka support both local disk and shared storage long-term?
   - Leaderless architecture vs abstraction layer approach?
+  - Can plugin complexity be managed effectively?
 
 ### The Path Forward Dilemma
 
@@ -156,7 +196,7 @@ The three diskless KIPs represent different visions for Kafka's cloud-native fut
 
 **KIP-1176** takes an incremental approach that preserves Kafka's performance characteristics while delivering moderate cost savings (43% documented). However, its weak availability story and limited scope (only follower replication) raise questions about whether it goes far enough.
 
-**KIP-1183** attempts to bridge both worlds with a pluggable abstraction layer, but the unclear Stream interface design and high plugin development burden have led to community skepticism about multiple implementations.
+**KIP-1183** attempts to bridge both worlds with a pluggable abstraction layer, but the unclear Stream interface design and high plugin development burden have led to community skepticism about multiple log implementations.
 
 ### For Kafka Users
 
@@ -168,7 +208,7 @@ If you're currently evaluating Kafka for cloud deployments:
 
 3. **Long term:** Kafka's architecture will likely evolve toward cloud-native patterns. Competitors like WarpStream and AutoMQ have already proven object storage viability, pressuring Apache Kafka to adapt.
 
-The current stalemate reflects a healthy but challenging debate about Kafka's future. The community must balance backward compatibility with innovation, performance with cost, and unified direction with vendor flexibility. Whatever path emerges will shape Kafka's relevance in cloud-native architectures for years to come.
+The current state reflects a healthy but challenging debate about Kafka's future. The community must balance backward compatibility with innovation, performance with cost, and unified direction with vendor flexibility. Whatever path emerges will shape Kafka's relevance in cloud-native architectures for years to come.
 
 ## Further reading
 
