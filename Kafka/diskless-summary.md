@@ -62,7 +62,7 @@ A table summary of KIPs along several factors important to our customers, such a
 | KIPs     | Cross-AZ Traffic Reduction | Cost Savings | Performance Impact | Scalability | Availability | Implementation Effort | Status (Aug 2025) |
 |----------|---------------------------|--------------|-------------------|-------------|--------------|---------------------|-------------------|
 | **KIP-1150** | **Complete** - Eliminates all cross-AZ replication (leaderless design) | **Maximum** - No cross-AZ costs for replication | **High latency**: P50 ~500ms, P99 ~1-2s (vs single-digit ms traditional) | **Best** - Stateless brokers, true cloud-native elasticity, data/metadata separation | **Strong** - Leverages S3's 11 9's durability and built-in cross-AZ replication | **High** - Revolutionary change, multiple sub-KIPs, but clean design | Under discussion, concerns about transaction/queue support |
-| **KIP-1176** | **Partial** - Only follower replication path (producer→leader and consumer traffic unchanged) | **Moderate** - 43% overall cost reduction documented | **Low latency in some durability settings** - Maintains single-digit ms for acks=1, near-traditional for acks=-1 | **Limited** - Still broker-centric, no cloud-native elasticity benefits | **Weak** - AZ failure creates recovery challenges, no hot standby for active segments | **Medium-High** - Incremental changes to existing code, but complexity may grow | Under discussion, availability concerns raised |
+| **KIP-1176** | **Partial** - Only follower replication path (producer→leader and consumer traffic unchanged) | **Moderate** - 43% overall cost reduction documented | **Low latency in some durability/storage settings** - Maintains single-digit ms for acks=1, near-traditional for acks=-1 with fast storage | **Limited** - Still broker-centric, no cloud-native elasticity benefits | **Weak** - AZ failure creates recovery challenges, no hot standby for active segments | **Medium-High** - Incremental changes to existing code, but complexity may grow | Under discussion, availability concerns raised |
 | **KIP-1183** | **Moderate** - Eliminates cross-AZ replication with shared storage (RF=1) | **Moderate** - Similar to KIP-1150 but less optimized | **Not quantified** - Depends on Stream implementation quality | **Good** - Stateless brokers enable scaling, but not as optimized as KIP-1150 | **Concerns** - Failover latency with RF=1 (1-2 sec documented), no hot standby | **High** - Large plugin development burden, unclear Stream interface design | Under discussion, Stream interface design unclear |
 
 **Implementation References:**
@@ -89,7 +89,7 @@ The Kafka community faces an unprecedented challenge with three concurrent propo
 **May 6, 2025** - KIP-1176 Introduced
 - Henry Haiying Cai (Slack/Salesforce) presents "incremental evolution" approach
 - Emphasizes simpler design building on existing KIP-405
-- Claims 43% cost reduction while maintaining low latency performance in some durability settings
+- Claims 43% cost reduction while maintaining low latency performance in some durability/storage settings
 
 **May-August 2025** - Discussion Stalls
 - Jun Rao (Confluent) raises questions about KIP-1150's latency vs KIP-1176's simpler approach
