@@ -173,7 +173,7 @@ The current stalemate reflects a healthy but challenging debate about Kafka's fu
 ## Further reading
 
 Links to several sources that are important to keep track of.
-- [The community summary KIP](https://cwiki.apache.org/confluence/display/KAFKA/The+Path+Forward+for+Saving+Cross-AZ+Replication+Costs+KIPs)
+- [The community summary page](https://cwiki.apache.org/confluence/display/KAFKA/The+Path+Forward+for+Saving+Cross-AZ+Replication+Costs+KIPs)
 - [KIP-1150](https://cwiki.apache.org/confluence/display/KAFKA/KIP-1150%3A+Diskless+Topics)
 - [KIP-1176](https://cwiki.apache.org/confluence/display/KAFKA/KIP-1176%3A+Tiered+Storage+for+Active+Log+Segment)
 - [KIP-1183](https://cwiki.apache.org/confluence/display/KAFKA/KIP-1183:+Unified+Shared+Storage)
