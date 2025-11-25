@@ -6,15 +6,15 @@ The common goal of the Diskless KIPs is to save cross-AZ traffic cost.
 
 Typical deployment of Kafka on the cloud is to deploy brokers onto several availability zones to reduce the chance of interruption by zone-wide outage. However, Kafka's traditional architecture is based on broker disks for persistence and replication. This creates cross-AZ traffic, which cloud providers charge for—typically $0.01-0.02 per GB on AWS and GCP.
 
-Kafka's tiered storage (KIP-405) takes a step to reduce the cross-AZ traffic on older log data, aka the rolled segments, by moving them to cloud storage and relying on the cloud storage's built-in cross-AZ replication. This is great for batch historical workloads that are less than real-time.
+Kafka's tiered storage (KIP-405) takes a step to reduce the cross-AZ traffic on older log data, aka the rolled segments, by moving them to cloud storage and relying on the cloud storage's built-in cross-AZ replication. This cost saving is great for batch historical workloads that require less than real-time latency.
 
-Real-time workloads on latest events, however, mostly only touch the active segments, which still rely on the broker disk in the traditional architecture to replicate across zones. This represents an opportunity for further cost cutting, though it may come with some performance impact.
+Real-time workloads on latest events, however, mostly only touch the active segments, which still rely on the broker disk in the traditional architecture to replicate across zones. This presents an opportunity for further cost cutting, though it may come with some performance impact.
 
 For cloud providers that do not charge cross-AZ traffic (like Azure), the other goal of diskless becomes important, which is to simplify operations and enable cloud-native scalability.
 
 ## Diskless KIPs summary
 
-The Kafka community currently has three concurrent proposals addressing the same challenge, creating an unprecedented situation where discussions have stalled as of August 2025. Each KIP represents a fundamentally different architectural philosophy.
+The Kafka community currently has three concurrent proposals addressing the same challenge, creating an unprecedented situation where discussions have moved gradually as of November 2025. Each KIP represents a fundamentally different architectural philosophy.
 
 ### KIP-1150: Diskless Topics
 
@@ -59,7 +59,7 @@ The Kafka community currently has three concurrent proposals addressing the same
 
 A table summary of KIPs along several factors important to our customers, such as cost saving, and architecture pros and cons along scalability, availability, efforts to change.
 
-| KIPs     | Cross-AZ Traffic Reduction | Cost Savings | Performance Impact | Scalability | Availability | Implementation Effort | Status (Aug 2025) |
+| KIPs     | Cross-AZ Traffic Reduction | Cost Savings | Performance Impact | Scalability | Availability | Implementation Effort | Status (Nov 2025) |
 |----------|---------------------------|--------------|-------------------|-------------|--------------|---------------------|-------------------|
 | **KIP-1150** | **Complete** - Eliminates all cross-AZ replication (leaderless design) | **Maximum** - No cross-AZ costs for replication | **High latency**: P50 ~500ms, P99 ~1-2s (vs single-digit ms traditional) | **Best** - Stateless brokers, true cloud-native elasticity, data/metadata separation | **Strong** - Leverages S3's 11 9's durability and built-in cross-AZ replication | **High** - Revolutionary change, multiple sub-KIPs, but clean design | Under discussion, concerns about transaction/queue support |
 | **KIP-1176** | **Partial** - Only follower replication path (producer→leader and consumer traffic unchanged) | **Moderate** - 43% overall cost reduction documented | **Low latency in some durability/storage settings** - Maintains single-digit ms for acks=1, near-traditional for acks=-1 with fast storage | **Limited** - Still broker-centric, no cloud-native elasticity benefits | **Weak** - AZ failure creates recovery challenges, no hot standby for active segments | **Medium-High** - Incremental changes to existing code, but complexity may grow | Under discussion, availability concerns raised |
@@ -72,7 +72,7 @@ A table summary of KIPs along several factors important to our customers, such a
  
 ## Diskless KIPs status update
 
-The Kafka community faces an unprecedented challenge with three concurrent proposals all addressing cross-AZ replication costs. Discussions have **stalled for over two months as of August 2025**, with authors hesitant to proceed due to competing proposals.
+The Kafka community faces an unprecedented challenge with three concurrent proposals all addressing cross-AZ replication costs. Discussions have evoloved gradually as of November 2025, with authors and the community taking time to proceed to consider pros and cons of the proposals.
 
 ### Timeline of Major Discussion Points
 
@@ -91,7 +91,7 @@ The Kafka community faces an unprecedented challenge with three concurrent propo
 - Emphasizes simpler design building on existing KIP-405
 - Claims 43% cost reduction while maintaining low latency performance in some durability/storage settings
 
-**May-August 2025** - Discussion Stalls
+**May-November 2025** - Discussion continued
 - Jun Rao (Confluent) raises questions about KIP-1150's latency vs KIP-1176's simpler approach
 - Community concern about three concurrent proposals creating review burden
 - No clear consensus emerges on which direction to pursue
@@ -99,7 +99,7 @@ The Kafka community faces an unprecedented challenge with three concurrent propo
 ### Current Status by KIP
 
 **KIP-1150: Diskless Topics**
-- **Status:** Under discussion (stalled since May 2025)
+- **Status:** Under discussion (continuing since May 2025)
 - **Key Concerns:**
   - Expected latency ~100-500ms for writes (vs single-digit ms traditional)
   - No concrete design yet for transactions and queues support
@@ -119,7 +119,7 @@ The Kafka community faces an unprecedented challenge with three concurrent propo
   - Multi-cloud deployment model for GCP/Azure unclear
 
 **KIP-1183: Unified Shared Storage**
-- **Status:** Under discussion (stalled since May 2025)
+- **Status:** Under discussion (continuing since May 2025)
 - **Key Concerns:**
   - Stream interface design remains unclear
   - Large plugin development burden
