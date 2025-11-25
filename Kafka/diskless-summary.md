@@ -123,7 +123,7 @@ The Kafka community faces an unprecedented challenge with three concurrent propo
 - **Key Concerns:**
   - Stream interface design remains unclear
   - Large plugin development burden
-  - Risk of ecosystem fragmentation with multiple AbstractLog implementations
+  - Potential multiple AbstractLog implementations
 - **Open Questions:**
   - How does this relate to KIP-1150 and KIP-1176?
   - Should Kafka support both local disk and shared storage long-term?
@@ -156,7 +156,7 @@ The three diskless KIPs represent different visions for Kafka's cloud-native fut
 
 **KIP-1176** takes an incremental approach that preserves Kafka's performance characteristics while delivering moderate cost savings (43% documented). However, its weak availability story and limited scope (only follower replication) raise questions about whether it goes far enough.
 
-**KIP-1183** attempts to bridge both worlds with a pluggable abstraction layer, but the unclear Stream interface design and high plugin development burden have led to community skepticism about fragmentation risks.
+**KIP-1183** attempts to bridge both worlds with a pluggable abstraction layer, but the unclear Stream interface design and high plugin development burden have led to community skepticism about multiple implementations.
 
 ### For Kafka Users
 
