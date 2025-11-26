@@ -204,7 +204,7 @@ If you're currently evaluating Kafka for cloud deployments:
 
 1. **Short term (2025-2026):** Continue with traditional Kafka or existing tiered storage (KIP-405). The diskless discussion is unlikely to resolve quickly.
 
-2. **Medium term (2026-2027):** Monitor which KIP gains traction. Early indicators suggest the community may favor either KIP-1150's comprehensive approach or a simplified version of KIP-1176.
+2. **Medium term (2026-2027):** Monitor which KIP gains traction. Early indicators suggest the community may favor either KIP-1150's comprehensive approach or a stop-gap solution in KIP-1176.
 
 3. **Long term:** Kafka's architecture will likely evolve toward cloud-native patterns. Competitors like WarpStream and AutoMQ have already proven object storage viability, pressuring Apache Kafka to adapt.
 
