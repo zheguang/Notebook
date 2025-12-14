@@ -145,7 +145,7 @@ The Kafka community faces an unprecedented challenge with three concurrent propo
   - Community acceptance of leaderless architecture
 
 **KIP-1176: Tiered Storage for Active Segments**
-- **Status:** Active discussion through August 2025
+- **Status:** Active discussion through November 2025
 - **Progress:** Thomas Thornton (Slack) provided detailed responses to Jun Rao's technical concerns
 - **Key Concerns:**
   - Weak availability story for AZ failures remains unresolved
@@ -157,7 +157,7 @@ The Kafka community faces an unprecedented challenge with three concurrent propo
   - Cost-benefit trade-off vs more comprehensive approaches
 
 **KIP-1183: Unified Shared Storage**
-- **Status:** Re-engaged discussion in November 2025 after summer hiatus
+- **Status:** Re-engaged discussion in November 2025 
 - **Progress:** Xinyu Zhou responded to Jun Rao's feedback, ongoing architectural discussions
 - **Key Concerns:**
   - Stream interface design remains unclear
