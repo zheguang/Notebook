@@ -5,15 +5,16 @@ Three PRs merged for changelog:
 - New query optimization on pattern matching queries: [Issue#71421](https://github.com/ClickHouse/ClickHouse/issues/71421), [PR#85920](https://github.com/ClickHouse/ClickHouse/pull/85920)
 - Fix common table expression bug for insert query: [Issue#85368](https://github.com/ClickHouse/ClickHouse/issues/85368), [PR#87789](https://github.com/ClickHouse/ClickHouse/pull/87789)
 
-# Why
+# Overview
 
 ## PR#87374 and PR#85920
 - ClickHouse is the fastest analytics database. My contributions make it even faster.
 - Text search is common for many workloads many data have textual representations.  Workloads such as searching logs and traces in observability, retrieiving information from documents, data transformation in data warehouse, and generative AI applications.
 - Faster text search will make all these applications run faster, save time and resources, unlocking more analytical insights, and leading to faster decisions making in both business and AI applications.
 
-- ClickHouse is fast thanks to its query optimization, which has recently been reworked [link](). How do we make use of the new query optimizer to further push query efficiency?
+- ClickHouse is fast thanks to its query optimization, which is a deep topic culminating decades of database research. How do we add to the query optimizer to further push query efficiency?
 - For text search, complex pattern matching requires more compute-intensive regular expression evaluation.  However, for simpler patterns such as affix (prefix and suffix) matching, simple substring comparison optimized for single-instruction-multiple-data (SIMD) can be several times faster.  
+- To make the optimization applicable automatically to a wide set of user queries, the solution we propose is based on query optimization techniques, where a new optimization pass is added to the query analyzer to transform the tree representation of a query into an semantically equivalent but more efficient form for execution.
 
 ## PR#87789
 - ClickHosue is great for ingesting large amount of data.  The data ingestion facility in ClickHouse is crucial for shoveling large amount of data from external sources such as Apache Kafka and Apache Iceberg into ClickHouse native format for most efficiency. 
@@ -21,7 +22,7 @@ Three PRs merged for changelog:
 
 # Deep dive
 
-## PR#85920 Rewrite `like` expression for affix patterns
+## PR#85920: Rewrite `like` expression for affix patterns
 
 Many text search involves matching certain prefix or suffix, for [example](https://fiddle.clickhouse.com/4a0ba187-a260-49f9-afe5-af6c29f1831e):
 ```
@@ -152,11 +153,53 @@ QUERY id: 0
           CONSTANT id: 9, constant_value: \'ClickHouse\', constant_value_type: String
 ```
 
-Next, we will see how this difference in query plans result in substantial perforamnce gain.
+In the Performance Section, we will see how this difference in query plans result in substantial perforamnce gain.
 
-### Performance
+## PR#87374: SIMD-optimized case-insensntive text search of affix patterns
 
-#### Benchmark of LIKE rewrite PR#85920
+- Why is SIMD important in data-intensive computation? 
+- Text search functions in ClickHouse is performance critical, because these functions are computed within an "inner loop", i.e., evaluated against many granules of rows.  So a small fraction of CPU cycles saved in these functions can be multiplied by the amount of input data to result in a significant performance boost.
+- Changing these text search functions therefore requires a lot of care.
+- We use several techniques to extract performance:
+    - Separate the fast path for ASCII from UTF8.  Characters in ASCII encoding are all one byte long, whereas UTF-8 encodes a wider character set with varying byte sizes ranging from one to 4.  So ASCII comparison can be done without extra width checks.
+    ```c++
+    using CaseInsensitiveComparator = std::variant<
+    std::unique_ptr<ASCIICaseInsensitiveStringSearcher>,
+    std::unique_ptr<UTF8CaseInsensitiveStringSearcher>>;
+    ```
+    - If comparing against a constant affix pattern, say 'ClickHouse', then pull the construction of the comparator object outside of the inner loop of row-wise comparison.
+    ```c++
+    const CaseInsensitiveComparator const_comparator = constCaseInsensitiveComparatorOf<NeedleSource>(needle_source);
+
+    size_t row_num = 0;
+
+    while (!haystack_source.isEnd())
+    {
+        /// Compare each row
+    }
+    ```
+    - To avoid extra operations, only compare the substrings of the same legnth as the affix pattern, e.g.,
+    ```c++
+    res_data[row_num] = std::get<std::unique_ptr<ASCIICaseInsensitiveStringSearcher>>(const_comparator)->compare(haystack.data, haystack.data + haystack.size, haystack.data);
+    ```
+    - Use SIMD streaming operations for case insensitive comparisons for the targeted CPU architecture:
+    ```
+    const auto v_haystack = _mm_loadu_si128(reinterpret_cast<const __m128i *>(pos));
+    const auto v_against_l = _mm_cmpeq_epi8(v_haystack, cachel);
+    const auto v_against_u = _mm_cmpeq_epi8(v_haystack, cacheu);
+    const auto v_against_l_or_u = _mm_or_si128(v_against_l, v_against_u);
+    const auto mask = _mm_movemask_epi8(v_against_l_or_u);
+    ```
+
+- Source: [Intel Comparison Operations for Streaming SIMD Extension 2](https://www.cita.utoronto.ca/~merz/intel_c10b/main_cls/mergedProjects/intref_cls/common/intref_sse2_int_comparison.htm)
+
+In the Performance Section, we will show about 38% speedup in the TPC-H benchmark.
+
+# Performance
+
+## Benchmark of LIKE rewrite PR#85920
+
+As part of the PR, we added affix pattern queries to the benchmark, so that the CI/CD pipeline can continuously monitor the performance for any improvement or degradation.  The evaluation against this PR shows about 5x improvement:
 
 | Median time, s	| Relative time variance	| Query |
 | --------------------- | ----------------------------- | ----- |
@@ -168,7 +211,10 @@ Next, we will see how this difference in query plans result in substantial perfo
 - Source: [Performance benchmark for PR#85920](https://s3.amazonaws.com/clickhouse-test-reports/PRs/85920/b28218b80e7042a42a6d8144292a6e857e0871a1//performance_comparison_arm_release_master_head_3_3/report.html)
 
 
-#### Bechmark of SIMD case insensitive search PR#87374
+## Bechmark of SIMD case insensitive search PR#87374
+
+First let's generate TPC-H benchmark with scale factor `30`.  This gives us a table, `lineitem`,  for about 30GB.
+We then load the `lineitem` into ClickHouse, and run a few queries to show the performance improvement by SIMD.
 
 1. StartsWith + lower
 ```
